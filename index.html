@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>13F Signal Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #12121a;
+      --bg-card: #1a1a25;
+      --border: #2a2a3a;
+      --text-primary: #f0f0f5;
+      --text-secondary: #8888a0;
+      --text-muted: #555566;
+      --accent-red: #ff4757;
+      --accent-red-dim: #ff475733;
+      --accent-green: #2ed573;
+      --accent-green-dim: #2ed57333;
+      --accent-yellow: #ffa502;
+      --accent-blue: #3742fa;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    .container { max-width: 1400px; margin: 0 auto; padding: 40px 24px; }
+
+    header { text-align: center; margin-bottom: 60px; position: relative; }
+    header::before {
+      content: '';
+      position: absolute;
+      top: -100px; left: 50%; transform: translateX(-50%);
+      width: 600px; height: 400px;
+      background: radial-gradient(ellipse, var(--accent-blue) 0%, transparent 70%);
+      opacity: 0.08; pointer-events: none;
+    }
+
+    .logo { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--text-muted); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 16px; }
+    h1 { font-size: 48px; font-weight: 700; letter-spacing: -1px; margin-bottom: 16px; background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .subtitle { color: var(--text-secondary); font-size: 18px; font-weight: 300; }
+    .casual-quote { text-align: center; font-size: 13px; color: var(--text-muted); margin-top: 16px; font-style: italic; }
+
+    .meta-bar { display: flex; justify-content: center; gap: 32px; margin-top: 32px; padding: 16px 24px; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border); flex-wrap: wrap; }
+    .meta-item { display: flex; align-items: center; gap: 8px; }
+    .meta-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .meta-value { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--text-primary); }
+
+    .source-selector { display: flex; justify-content: center; gap: 12px; margin-bottom: 32px; }
+    .source-btn { font-family: 'JetBrains Mono', monospace; font-size: 13px; padding: 12px 24px; border: 2px solid var(--border); border-radius: 12px; background: var(--bg-secondary); color: var(--text-secondary); cursor: pointer; transition: all 0.2s ease; }
+    .source-btn:hover { border-color: var(--text-muted); color: var(--text-primary); }
+    .source-btn.active { border-color: var(--accent-blue); background: rgba(55, 66, 250, 0.1); color: var(--text-primary); }
+    .source-btn .flag { margin-right: 8px; }
+
+    .section { margin-bottom: 48px; }
+    .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .section-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+    .section-icon.danger { background: var(--accent-red-dim); }
+    .section-icon.success { background: var(--accent-green-dim); }
+    .section-title { font-size: 24px; font-weight: 600; }
+    .section-count { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--text-muted); margin-left: auto; }
+
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; }
+
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; transition: all 0.2s ease; }
+    .card:hover { border-color: var(--text-muted); transform: translateY(-2px); }
+    .card.danger { border-left: 3px solid var(--accent-red); }
+    .card.warning { border-left: 3px solid var(--accent-yellow); }
+    .card.success { border-left: 3px solid var(--accent-green); }
+
+    .card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+    .card-symbol { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
+    .card-badge { font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .card-badge.high { background: var(--accent-red-dim); color: var(--accent-red); }
+    .card-badge.medium { background: rgba(255, 165, 2, 0.2); color: var(--accent-yellow); }
+    .card-badge.new { background: var(--accent-green-dim); color: var(--accent-green); }
+    .card-detail { color: var(--text-secondary); font-size: 14px; margin-bottom: 16px; }
+    .card-rule { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-muted); background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; margin-bottom: 12px; display: inline-block; }
+
+    .changes-list { display: flex; flex-direction: column; gap: 8px; }
+    .change-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg-secondary); border-radius: 8px; font-size: 13px; }
+    .change-period { font-family: 'JetBrains Mono', monospace; color: var(--text-muted); font-size: 11px; }
+    .change-percent { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+    .change-percent.positive { color: var(--accent-green); }
+    .change-percent.negative { color: var(--accent-red); }
+
+    .stats-row { display: flex; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+    .stat { flex: 1; }
+    .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--text-primary); }
+
+    .action-summary { margin-bottom: 48px; padding: 32px; background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card) 100%); border: 2px solid var(--border); border-radius: 20px; position: relative; overflow: hidden; }
+    .action-summary::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--accent-red), var(--accent-yellow), var(--accent-green)); }
+    .action-title { font-size: 14px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 24px; display: flex; align-items: center; gap: 8px; }
+    .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media (max-width: 768px) { .action-grid { grid-template-columns: 1fr; } }
+    .action-box { padding: 24px; border-radius: 12px; }
+    .action-box.dont-buy { background: var(--accent-red-dim); border: 1px solid var(--accent-red); }
+    .action-box.watch { background: var(--accent-green-dim); border: 1px solid var(--accent-green); }
+    .action-box-title { font-family: 'JetBrains Mono', monospace; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .action-box.dont-buy .action-box-title { color: var(--accent-red); }
+    .action-box.watch .action-box-title { color: var(--accent-green); }
+    .action-list { list-style: none; }
+    .action-list li { padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px; }
+    .action-list li:last-child { border-bottom: none; }
+    .action-symbol { font-weight: 600; font-size: 15px; }
+    .action-reason { font-size: 12px; color: var(--text-muted); }
+    .action-rule { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-muted); background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; margin-left: 8px; }
+    .delay-notice { font-size: 11px; color: var(--accent-yellow); margin-top: 16px; padding: 8px 12px; background: rgba(255, 165, 2, 0.1); border-radius: 6px; text-align: center; }
+
+    .disclaimer { margin-top: 60px; padding: 24px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; text-align: center; }
+    .disclaimer-title { font-size: 12px; color: var(--accent-yellow); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; }
+    .disclaimer-text { color: var(--text-muted); font-size: 14px; max-width: 600px; margin: 0 auto; }
+
+    .empty-state { text-align: center; padding: 48px; color: var(--text-muted); }
+    .loading { text-align: center; padding: 60px; color: var(--text-muted); }
+    .loading-spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent-blue); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 768px) {
+      h1 { font-size: 32px; }
+      .meta-bar { flex-direction: column; gap: 16px; }
+      .cards-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">🚀 To The Moon</div>
+      <h1>Signal Dashboard</h1>
+      <p class="subtitle">형님들 뭐 샀나 훔쳐보기</p>
+      <div class="meta-bar" id="metaBar">
+        <div class="loading"><div class="loading-spinner"></div><p>데이터 로딩 중...</p></div>
+      </div>
+      <p class="casual-quote" id="casualQuote">"화성 갈끄니까 🚀"</p>
+    </header>
+
+    <div class="source-selector">
+      <button class="source-btn active" data-source="berkshire" onclick="selectSource('berkshire')">
+        <span class="flag">🇺🇸</span>Berkshire Hathaway
+      </button>
+      <button class="source-btn" data-source="nps" onclick="selectSource('nps')">
+        <span class="flag">🇰🇷</span>국민연금
+      </button>
+    </div>
+
+    <section class="action-summary" id="actionSummary">
+      <div class="loading"><div class="loading-spinner"></div></div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div class="section-icon danger">🚫</div>
+        <h2 class="section-title">Risk Signals</h2>
+        <span class="section-count" id="exclusionCount">-</span>
+      </div>
+      <div class="cards-grid" id="exclusionList">
+        <div class="loading"><div class="loading-spinner"></div></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div class="section-icon success">📈</div>
+        <h2 class="section-title">Positive Signals</h2>
+        <span class="section-count" id="watchlistCount">-</span>
+      </div>
+      <div class="cards-grid" id="watchlist">
+        <div class="loading"><div class="loading-spinner"></div></div>
+      </div>
+    </section>
+
+    <div class="disclaimer">
+      <div class="disclaimer-title">⚠️ 본 페이지는 참고용 페이지입니다.</div>
+      <div class="disclaimer-title">13F 공시 데이터는 최대 45일까지 지연될 수 있습니다.</div>
+    </div>
+  </div>
+
+  <script>
+    const casualQuotes = [
+      "화성 갈끄니까 🚀", "버핏 형이 뭐 샀나 봐야지 👀", "떡상 기원 🙏"
+    ];
+
+    function showRandomQuote() {
+      const quote = casualQuotes[Math.floor(Math.random() * casualQuotes.length)];
+      document.getElementById('casualQuote').textContent = `"${quote}"`;
+    }
+
+    let currentSource = 'berkshire';
+
+    function selectSource(source) {
+      currentSource = source;
+      document.querySelectorAll('.source-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.source === source);
+      });
+      showRandomQuote();
+      render();
+    }
+
+    async function loadData() {
+      try {
+        const response = await fetch(`/api/signals/${currentSource}`);
+        if (response.ok) return await response.json();
+      } catch (e) { console.log('API 실패, 정적 파일 폴백'); }
+      
+      try {
+        const filename = currentSource === 'berkshire' ? 'analysis.json' : 'analysis-nps.json';
+        const fallback = await fetch(`./data/${filename}`);
+        if (fallback.ok) return await fallback.json();
+      } catch (e) { console.error('Error:', e); }
+      return null;
+    }
+
+    function renderMetaBar(metadata) {
+      document.getElementById('metaBar').innerHTML = `
+        <div class="meta-item"><span class="meta-label">소스</span><span class="meta-value">${metadata.flag || ''} ${metadata.source}</span></div>
+        <div class="meta-item"><span class="meta-label">최신 공시</span><span class="meta-value">${metadata.latestFiling}</span></div>
+        <div class="meta-item"><span class="meta-label">분석 분기</span><span class="meta-value">${metadata.analyzedQuarters?.length || 0}개</span></div>
+        <div class="meta-item"><span class="meta-label">보유 종목</span><span class="meta-value">${metadata.totalPositions}개</span></div>
+      `;
+    }
+
+    function formatPercent(percent) { return `${percent > 0 ? '+' : ''}${percent.toFixed(1)}%`; }
+    function formatValue(valueK) { const m = valueK / 1000; return m >= 1000 ? `$${(m/1000).toFixed(1)}B` : `$${m.toFixed(1)}M`; }
+    function getRuleTag(item) {
+      if (item.reason === 'CONSECUTIVE_DECREASE') return 'Consecutive Sell';
+      if (item.reason === 'LIQUIDATED') return 'Full Exit';
+      if (item.signal === 'NEW_POSITION') return 'New Position';
+      if (item.signal === 'CONSECUTIVE_INCREASE') return 'Consecutive Buy';
+      return '';
+    }
+
+    function renderExclusionCard(item) {
+      const severityClass = item.severity === 'HIGH' ? 'danger' : 'warning';
+      const changesHtml = item.changes ? item.changes.map(c => `
+        <div class="change-item">
+          <span class="change-period">${c.period.split(' → ').map(d => d.slice(5)).join(' → ')}</span>
+          <span class="change-percent ${c.percent >= 0 ? 'positive' : 'negative'}">${formatPercent(c.percent)}</span>
+        </div>
+      `).join('') : '';
+      return `
+        <div class="card ${severityClass}">
+          <div class="card-header">
+            <span class="card-symbol">${item.symbol}</span>
+            <span class="card-badge ${item.severity === 'HIGH' ? 'high' : 'medium'}">${item.severity}</span>
+          </div>
+          <span class="card-rule">RULE: ${getRuleTag(item)}</span>
+          <p class="card-detail">${item.detail}</p>
+          ${changesHtml ? `<div class="changes-list">${changesHtml}</div>` : ''}
+          ${item.currentShares > 0 ? `
+            <div class="stats-row">
+              <div class="stat"><div class="stat-label">현재 보유</div><div class="stat-value">${item.currentShares.toLocaleString()} 주</div></div>
+              <div class="stat"><div class="stat-label">가치</div><div class="stat-value">${formatValue(item.currentValueK)}</div></div>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    function renderWatchlistCard(item) {
+      const changesHtml = item.changes ? item.changes.slice(0, 3).map(c => `
+        <div class="change-item">
+          <span class="change-period">${c.period.split(' → ').map(d => d.slice(5)).join(' → ')}</span>
+          <span class="change-percent ${c.percent >= 0 ? 'positive' : 'negative'}">${formatPercent(c.percent)}</span>
+        </div>
+      `).join('') : '';
+      return `
+        <div class="card success">
+          <div class="card-header">
+            <span class="card-symbol">${item.symbol}</span>
+            <span class="card-badge new">${item.signal === 'NEW_POSITION' ? 'NEW' : 'UP'}</span>
+          </div>
+          <span class="card-rule">RULE: ${getRuleTag(item)}</span>
+          <p class="card-detail">${item.detail}</p>
+          ${changesHtml ? `<div class="changes-list">${changesHtml}</div>` : ''}
+          <div class="stats-row">
+            <div class="stat"><div class="stat-label">현재 보유</div><div class="stat-value">${item.currentShares.toLocaleString()} 주</div></div>
+            <div class="stat"><div class="stat-label">가치</div><div class="stat-value">${formatValue(item.currentValueK)}</div></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderActionSummary(data) {
+      const seen = new Set();
+      const uniqueExc = data.exclusionList.filter(i => !seen.has(i.symbol) && seen.add(i.symbol));
+      seen.clear();
+      const uniqueWatch = data.watchlist.filter(i => !seen.has(i.symbol) && seen.add(i.symbol));
+      
+      const riskHtml = uniqueExc.slice(0, 8).map(item => `
+        <li><div><span class="action-symbol">${item.symbol}</span><span class="action-rule">${getRuleTag(item)}</span></div><span class="action-reason">${item.detail}</span></li>
+      `).join('') || '<li><span class="action-symbol">없음</span></li>';
+      
+      const watchHtml = uniqueWatch.slice(0, 8).map(item => `
+        <li><div><span class="action-symbol">${item.symbol}</span><span class="action-rule">${getRuleTag(item)}</span></div><span class="action-reason">${item.detail}</span></li>
+      `).join('') || '<li><span class="action-symbol">없음</span></li>';
+      
+      document.getElementById('actionSummary').innerHTML = `
+        <div class="action-title">📊 Delayed Signals (${data.metadata.latestFiling} 공시 기준)</div>
+        <div class="action-grid">
+          <div class="action-box dont-buy">
+            <div class="action-box-title">⚠️ Risk Signals</div>
+            <ul class="action-list">${riskHtml}</ul>
+          </div>
+          <div class="action-box watch">
+            <div class="action-box-title">📈 Positive Signals</div>
+            <ul class="action-list">${watchHtml}</ul>
+          </div>
+        </div>
+        <div class="delay-notice">⏱ 13F 공시는 분기 종료 후 최대 45일 지연됩니다. 이 데이터는 과거 시점 기준입니다.</div>
+      `;
+    }
+
+    async function render() {
+      const data = await loadData();
+      if (!data) {
+        document.getElementById('actionSummary').innerHTML = '<div class="empty-state">데이터를 불러올 수 없습니다.</div>';
+        document.getElementById('exclusionList').innerHTML = '<div class="empty-state">데이터를 불러올 수 없습니다.</div>';
+        document.getElementById('watchlist').innerHTML = '<div class="empty-state">데이터를 불러올 수 없습니다.</div>';
+        return;
+      }
+
+      renderActionSummary(data);
+      renderMetaBar(data.metadata);
+
+      const seen = new Set();
+      const uniqueExc = data.exclusionList.filter(i => !seen.has(i.symbol) && seen.add(i.symbol));
+      document.getElementById('exclusionList').innerHTML = uniqueExc.length ? uniqueExc.map(renderExclusionCard).join('') : '<div class="empty-state">리스크 신호 없음 👍</div>';
+      document.getElementById('exclusionCount').textContent = `${uniqueExc.length}개 종목`;
+
+      seen.clear();
+      const uniqueWatch = data.watchlist.filter(i => !seen.has(i.symbol) && seen.add(i.symbol));
+      document.getElementById('watchlist').innerHTML = uniqueWatch.length ? uniqueWatch.map(renderWatchlistCard).join('') : '<div class="empty-state">긍정 신호 없음</div>';
+      document.getElementById('watchlistCount').textContent = `${uniqueWatch.length}개 종목`;
+    }
+
+    render();
+    showRandomQuote();
+    setInterval(showRandomQuote, 10000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "stock-investment",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "generate": "node generate-all.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@hono/node-server": "^1.19.8",
+    "axios": "^1.13.2",
+    "fast-xml-parser": "^5.3.3",
+    "hono": "^4.11.4"
+  }
+}

@@ -1,0 +1,125 @@
+{
+  "metadata": {
+    "source": "Berkshire Hathaway",
+    "cik": "0001067983",
+    "generatedAt": "2026-01-11T01:17:56.323Z",
+    "analyzedQuarters": [
+      "2025-11-14",
+      "2025-08-14",
+      "2025-05-15",
+      "2025-02-14"
+    ],
+    "latestFiling": "2025-11-14",
+    "totalPositions": 41
+  },
+  "watchlist": [
+    {
+      "symbol": "ALPHABET INC",
+      "cusip": "02079K305",
+      "signal": "NEW_POSITION",
+      "detail": "신규 편입",
+      "currentShares": 17846142,
+      "currentValueK": 4338397121
+    },
+    {
+      "symbol": "LAMAR ADVERTISING CO NEW",
+      "cusip": "512816109",
+      "signal": "CONSECUTIVE_INCREASE",
+      "detail": "2분기 연속 증가",
+      "currentShares": 1202110,
+      "currentValueK": 147162306,
+      "changes": [
+        {
+          "period": "2025-08-14 → 2025-11-14",
+          "percent": 2.79,
+          "type": "INCREASE"
+        },
+        {
+          "period": "2025-05-15 → 2025-08-14",
+          "percent": 100,
+          "type": "NEW"
+        },
+        {
+          "period": "2025-02-14 → 2025-05-15",
+          "percent": 0,
+          "type": "UNCHANGED"
+        }
+      ]
+    },
+    {
+      "symbol": "LENNAR CORP",
+      "cusip": "526057104",
+      "signal": "CONSECUTIVE_INCREASE",
+      "detail": "2분기 연속 증가",
+      "currentShares": 7050950,
+      "currentValueK": 888701738,
+      "changes": [
+        {
+          "period": "2025-08-14 → 2025-11-14",
+          "percent": 0.03,
+          "type": "INCREASE"
+        },
+        {
+          "period": "2025-05-15 → 2025-08-14",
+          "percent": 100,
+          "type": "NEW"
+        },
+        {
+          "period": "2025-02-14 → 2025-05-15",
+          "percent": 0,
+          "type": "UNCHANGED"
+        }
+      ]
+    },
+    {
+      "symbol": "LENNAR CORP",
+      "cusip": "526057302",
+      "signal": "CONSECUTIVE_INCREASE",
+      "detail": "2분기 연속 증가",
+      "currentShares": 180980,
+      "currentValueK": 21715790,
+      "changes": [
+        {
+          "period": "2025-08-14 → 2025-11-14",
+          "percent": 0.03,
+          "type": "INCREASE"
+        },
+        {
+          "period": "2025-05-15 → 2025-08-14",
+          "percent": 18.59,
+          "type": "INCREASE"
+        },
+        {
+          "period": "2025-02-14 → 2025-05-15",
+          "percent": 0,
+          "type": "UNCHANGED"
+        }
+      ]
+    },
+    {
+      "symbol": "DOMINOS PIZZA INC",
+      "cusip": "25754A201",
+      "signal": "CONSECUTIVE_INCREASE",
+      "detail": "3분기 연속 증가",
+      "currentShares": 2981945,
+      "currentValueK": 1287335476,
+      "changes": [
+        {
+          "period": "2025-08-14 → 2025-11-14",
+          "percent": 13.22,
+          "type": "INCREASE"
+        },
+        {
+          "period": "2025-05-15 → 2025-08-14",
+          "percent": 0.51,
+          "type": "INCREASE"
+        },
+        {
+          "period": "2025-02-14 → 2025-05-15",
+          "percent": 10.02,
+          "type": "INCREASE"
+        }
+      ]
+    }
+  ]
+}
