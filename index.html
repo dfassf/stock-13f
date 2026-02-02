@@ -7,6 +7,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
     :root {
       --bg-primary: #0a0a0f;
@@ -61,6 +64,8 @@
     .source-btn:hover { border-color: var(--text-muted); color: var(--text-primary); }
     .source-btn.active { border-color: var(--accent-blue); background: rgba(55, 66, 250, 0.1); color: var(--text-primary); }
     .source-btn .flag { margin-right: 8px; }
+    .source-btn.loading { opacity: 0.6; pointer-events: none; position: relative; }
+    .source-btn.loading::after { content: ''; position: absolute; top: 50%; right: 12px; transform: translateY(-50%); width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent-blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
 
     .section { margin-bottom: 48px; }
     .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
@@ -123,8 +128,8 @@
     .disclaimer-text { color: var(--text-muted); font-size: 14px; max-width: 600px; margin: 0 auto; }
 
     .empty-state { text-align: center; padding: 48px; color: var(--text-muted); }
-    .loading { text-align: center; padding: 60px; color: var(--text-muted); }
-    .loading-spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent-blue); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px; }
+    .loading-inline { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 20px; color: var(--text-muted); }
+    .loading-spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent-blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     @media (max-width: 768px) {
@@ -135,104 +140,26 @@
   </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <div class="logo">🚀 To The Moon</div>
-      <h1>Signal Dashboard</h1>
-      <p class="subtitle">형님들 뭐 샀나 훔쳐보기</p>
-      <div class="meta-bar" id="metaBar">
-        <div class="loading"><div class="loading-spinner"></div><p>데이터 로딩 중...</p></div>
-      </div>
-      <p class="casual-quote" id="casualQuote">"화성 갈끄니까 🚀"</p>
-    </header>
+  <div id="root"></div>
 
-    <div class="source-selector">
-      <button class="source-btn active" data-source="berkshire" onclick="selectSource('berkshire')">
-        <span class="flag">🇺🇸</span>Berkshire Hathaway
-      </button>
-      <button class="source-btn" data-source="nps" onclick="selectSource('nps')">
-        <span class="flag">🇰🇷</span>국민연금
-      </button>
-    </div>
+  <script type="text/babel">
+    const { useState, useEffect, useCallback } = React;
 
-    <section class="action-summary" id="actionSummary">
-      <div class="loading"><div class="loading-spinner"></div></div>
-    </section>
-
-    <section class="section">
-      <div class="section-header">
-        <div class="section-icon danger">🚫</div>
-        <h2 class="section-title">Risk Signals</h2>
-        <span class="section-count" id="exclusionCount">-</span>
-      </div>
-      <div class="cards-grid" id="exclusionList">
-        <div class="loading"><div class="loading-spinner"></div></div>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-header">
-        <div class="section-icon success">📈</div>
-        <h2 class="section-title">Positive Signals</h2>
-        <span class="section-count" id="watchlistCount">-</span>
-      </div>
-      <div class="cards-grid" id="watchlist">
-        <div class="loading"><div class="loading-spinner"></div></div>
-      </div>
-    </section>
-
-    <div class="disclaimer">
-      <div class="disclaimer-title">⚠️ 본 페이지는 참고용 페이지입니다.</div>
-      <div class="disclaimer-title">13F 공시 데이터는 최대 45일까지 지연될 수 있습니다.</div>
-    </div>
-  </div>
-
-  <script>
     const casualQuotes = [
-      "화성 갈끄니까 🚀", "버핏 형이 뭐 샀나 봐야지 👀", "떡상 기원 🙏"
+      "화성 갈끄니까 🚀",
+      "버핏 형이 뭐 샀나 봐야지 👀",
+      "떡상 기원 🙏"
     ];
 
-    function showRandomQuote() {
-      const quote = casualQuotes[Math.floor(Math.random() * casualQuotes.length)];
-      document.getElementById('casualQuote').textContent = `"${quote}"`;
+    function formatPercent(percent) {
+      return `${percent > 0 ? '+' : ''}${percent.toFixed(1)}%`;
     }
 
-    let currentSource = 'berkshire';
-
-    function selectSource(source) {
-      currentSource = source;
-      document.querySelectorAll('.source-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.source === source);
-      });
-      showRandomQuote();
-      render();
+    function formatValue(valueK) {
+      const m = valueK / 1000;
+      return m >= 1000 ? `$${(m/1000).toFixed(1)}B` : `$${m.toFixed(1)}M`;
     }
 
-    async function loadData() {
-      try {
-        const response = await fetch(`/api/signals/${currentSource}`);
-        if (response.ok) return await response.json();
-      } catch (e) { console.log('API 실패, 정적 파일 폴백'); }
-      
-      try {
-        const filename = currentSource === 'berkshire' ? 'analysis.json' : 'analysis-nps.json';
-        const fallback = await fetch(`./data/${filename}`);
-        if (fallback.ok) return await fallback.json();
-      } catch (e) { console.error('Error:', e); }
-      return null;
-    }
-
-    function renderMetaBar(metadata) {
-      document.getElementById('metaBar').innerHTML = `
-        <div class="meta-item"><span class="meta-label">소스</span><span class="meta-value">${metadata.flag || ''} ${metadata.source}</span></div>
-        <div class="meta-item"><span class="meta-label">최신 공시</span><span class="meta-value">${metadata.latestFiling}</span></div>
-        <div class="meta-item"><span class="meta-label">분석 분기</span><span class="meta-value">${metadata.analyzedQuarters?.length || 0}개</span></div>
-        <div class="meta-item"><span class="meta-label">보유 종목</span><span class="meta-value">${metadata.totalPositions}개</span></div>
-      `;
-    }
-
-    function formatPercent(percent) { return `${percent > 0 ? '+' : ''}${percent.toFixed(1)}%`; }
-    function formatValue(valueK) { const m = valueK / 1000; return m >= 1000 ? `$${(m/1000).toFixed(1)}B` : `$${m.toFixed(1)}M`; }
     function getRuleTag(item) {
       if (item.reason === 'CONSECUTIVE_DECREASE') return 'Consecutive Sell';
       if (item.reason === 'LIQUIDATED') return 'Full Exit';
@@ -241,113 +168,310 @@
       return '';
     }
 
-    function renderExclusionCard(item) {
+    function LoadingSpinner() {
+      return (
+        <div className="loading-inline">
+          <div className="loading-spinner"></div>
+          <span>로딩 중...</span>
+        </div>
+      );
+    }
+
+    function MetaBar({ metadata }) {
+      if (!metadata) return <LoadingSpinner />;
+      
+      return (
+        <div className="meta-bar">
+          <div className="meta-item">
+            <span className="meta-label">소스</span>
+            <span className="meta-value">{metadata.flag || ''} {metadata.source}</span>
+          </div>
+          <div className="meta-item">
+            <span className="meta-label">최신 공시</span>
+            <span className="meta-value">{metadata.latestFiling}</span>
+          </div>
+          <div className="meta-item">
+            <span className="meta-label">분석 분기</span>
+            <span className="meta-value">{metadata.analyzedQuarters?.length || 0}개</span>
+          </div>
+          <div className="meta-item">
+            <span className="meta-label">보유 종목</span>
+            <span className="meta-value">{metadata.totalPositions}개</span>
+          </div>
+        </div>
+      );
+    }
+
+    function ExclusionCard({ item }) {
       const severityClass = item.severity === 'HIGH' ? 'danger' : 'warning';
-      const changesHtml = item.changes ? item.changes.map(c => `
-        <div class="change-item">
-          <span class="change-period">${c.period.split(' → ').map(d => d.slice(5)).join(' → ')}</span>
-          <span class="change-percent ${c.percent >= 0 ? 'positive' : 'negative'}">${formatPercent(c.percent)}</span>
-        </div>
-      `).join('') : '';
-      return `
-        <div class="card ${severityClass}">
-          <div class="card-header">
-            <span class="card-symbol">${item.symbol}</span>
-            <span class="card-badge ${item.severity === 'HIGH' ? 'high' : 'medium'}">${item.severity}</span>
+      
+      return (
+        <div className={`card ${severityClass}`}>
+          <div className="card-header">
+            <span className="card-symbol">{item.symbol}</span>
+            <span className={`card-badge ${item.severity === 'HIGH' ? 'high' : 'medium'}`}>
+              {item.severity}
+            </span>
           </div>
-          <span class="card-rule">RULE: ${getRuleTag(item)}</span>
-          <p class="card-detail">${item.detail}</p>
-          ${changesHtml ? `<div class="changes-list">${changesHtml}</div>` : ''}
-          ${item.currentShares > 0 ? `
-            <div class="stats-row">
-              <div class="stat"><div class="stat-label">현재 보유</div><div class="stat-value">${item.currentShares.toLocaleString()} 주</div></div>
-              <div class="stat"><div class="stat-label">가치</div><div class="stat-value">${formatValue(item.currentValueK)}</div></div>
+          <span className="card-rule">RULE: {getRuleTag(item)}</span>
+          <p className="card-detail">{item.detail}</p>
+          {item.changes && item.changes.length > 0 && (
+            <div className="changes-list">
+              {item.changes.map((c, idx) => (
+                <div key={idx} className="change-item">
+                  <span className="change-period">
+                    {c.period.split(' → ').map(d => d.slice(5)).join(' → ')}
+                  </span>
+                  <span className={`change-percent ${c.percent >= 0 ? 'positive' : 'negative'}`}>
+                    {formatPercent(c.percent)}
+                  </span>
+                </div>
+              ))}
             </div>
-          ` : ''}
+          )}
+          {item.currentShares > 0 && (
+            <div className="stats-row">
+              <div className="stat">
+                <div className="stat-label">현재 보유</div>
+                <div className="stat-value">{item.currentShares.toLocaleString()} 주</div>
+              </div>
+              <div className="stat">
+                <div className="stat-label">가치</div>
+                <div className="stat-value">{formatValue(item.currentValueK)}</div>
+              </div>
+            </div>
+          )}
         </div>
-      `;
+      );
     }
 
-    function renderWatchlistCard(item) {
-      const changesHtml = item.changes ? item.changes.slice(0, 3).map(c => `
-        <div class="change-item">
-          <span class="change-period">${c.period.split(' → ').map(d => d.slice(5)).join(' → ')}</span>
-          <span class="change-percent ${c.percent >= 0 ? 'positive' : 'negative'}">${formatPercent(c.percent)}</span>
-        </div>
-      `).join('') : '';
-      return `
-        <div class="card success">
-          <div class="card-header">
-            <span class="card-symbol">${item.symbol}</span>
-            <span class="card-badge new">${item.signal === 'NEW_POSITION' ? 'NEW' : 'UP'}</span>
+    function WatchlistCard({ item }) {
+      return (
+        <div className="card success">
+          <div className="card-header">
+            <span className="card-symbol">{item.symbol}</span>
+            <span className="card-badge new">
+              {item.signal === 'NEW_POSITION' ? 'NEW' : 'UP'}
+            </span>
           </div>
-          <span class="card-rule">RULE: ${getRuleTag(item)}</span>
-          <p class="card-detail">${item.detail}</p>
-          ${changesHtml ? `<div class="changes-list">${changesHtml}</div>` : ''}
-          <div class="stats-row">
-            <div class="stat"><div class="stat-label">현재 보유</div><div class="stat-value">${item.currentShares.toLocaleString()} 주</div></div>
-            <div class="stat"><div class="stat-label">가치</div><div class="stat-value">${formatValue(item.currentValueK)}</div></div>
+          <span className="card-rule">RULE: {getRuleTag(item)}</span>
+          <p className="card-detail">{item.detail}</p>
+          {item.changes && item.changes.length > 0 && (
+            <div className="changes-list">
+              {item.changes.slice(0, 3).map((c, idx) => (
+                <div key={idx} className="change-item">
+                  <span className="change-period">
+                    {c.period.split(' → ').map(d => d.slice(5)).join(' → ')}
+                  </span>
+                  <span className={`change-percent ${c.percent >= 0 ? 'positive' : 'negative'}`}>
+                    {formatPercent(c.percent)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="stats-row">
+            <div className="stat">
+              <div className="stat-label">현재 보유</div>
+              <div className="stat-value">{item.currentShares.toLocaleString()} 주</div>
+            </div>
+            <div className="stat">
+              <div className="stat-label">가치</div>
+              <div className="stat-value">{formatValue(item.currentValueK)}</div>
+            </div>
           </div>
         </div>
-      `;
+      );
     }
 
-    function renderActionSummary(data) {
+    function ActionSummary({ data }) {
+      if (!data) return <LoadingSpinner />;
+
       const seen = new Set();
       const uniqueExc = data.exclusionList.filter(i => !seen.has(i.symbol) && seen.add(i.symbol));
       seen.clear();
       const uniqueWatch = data.watchlist.filter(i => !seen.has(i.symbol) && seen.add(i.symbol));
-      
-      const riskHtml = uniqueExc.slice(0, 8).map(item => `
-        <li><div><span class="action-symbol">${item.symbol}</span><span class="action-rule">${getRuleTag(item)}</span></div><span class="action-reason">${item.detail}</span></li>
-      `).join('') || '<li><span class="action-symbol">없음</span></li>';
-      
-      const watchHtml = uniqueWatch.slice(0, 8).map(item => `
-        <li><div><span class="action-symbol">${item.symbol}</span><span class="action-rule">${getRuleTag(item)}</span></div><span class="action-reason">${item.detail}</span></li>
-      `).join('') || '<li><span class="action-symbol">없음</span></li>';
-      
-      document.getElementById('actionSummary').innerHTML = `
-        <div class="action-title">📊 Delayed Signals (${data.metadata.latestFiling} 공시 기준)</div>
-        <div class="action-grid">
-          <div class="action-box dont-buy">
-            <div class="action-box-title">⚠️ Risk Signals</div>
-            <ul class="action-list">${riskHtml}</ul>
+
+      return (
+        <div className="action-summary">
+          <div className="action-title">
+            📊 Delayed Signals ({data.metadata.latestFiling} 공시 기준)
           </div>
-          <div class="action-box watch">
-            <div class="action-box-title">📈 Positive Signals</div>
-            <ul class="action-list">${watchHtml}</ul>
+          <div className="action-grid">
+            <div className="action-box dont-buy">
+              <div className="action-box-title">⚠️ Risk Signals</div>
+              <ul className="action-list">
+                {uniqueExc.slice(0, 3).length > 0 ? (
+                  uniqueExc.slice(0, 3).map((item, idx) => (
+                    <li key={idx}>
+                      <div>
+                        <span className="action-symbol">{item.symbol}</span>
+                        <span className="action-rule">{getRuleTag(item)}</span>
+                      </div>
+                      <span className="action-reason">{item.detail}</span>
+                    </li>
+                  ))
+                ) : (
+                  <li><span className="action-symbol">없음</span></li>
+                )}
+              </ul>
+            </div>
+            <div className="action-box watch">
+              <div className="action-box-title">📈 Positive Signals</div>
+              <ul className="action-list">
+                {uniqueWatch.slice(0, 3).length > 0 ? (
+                  uniqueWatch.slice(0, 3).map((item, idx) => (
+                    <li key={idx}>
+                      <div>
+                        <span className="action-symbol">{item.symbol}</span>
+                        <span className="action-rule">{getRuleTag(item)}</span>
+                      </div>
+                      <span className="action-reason">{item.detail}</span>
+                    </li>
+                  ))
+                ) : (
+                  <li><span className="action-symbol">없음</span></li>
+                )}
+              </ul>
+            </div>
+          </div>
+          <div className="delay-notice">
+            ⏱ 13F 공시는 분기 종료 후 최대 45일 지연됩니다. 이 데이터는 과거 시점 기준입니다.
           </div>
         </div>
-        <div class="delay-notice">⏱ 13F 공시는 분기 종료 후 최대 45일 지연됩니다. 이 데이터는 과거 시점 기준입니다.</div>
-      `;
+      );
     }
 
-    async function render() {
-      const data = await loadData();
-      if (!data) {
-        document.getElementById('actionSummary').innerHTML = '<div class="empty-state">데이터를 불러올 수 없습니다.</div>';
-        document.getElementById('exclusionList').innerHTML = '<div class="empty-state">데이터를 불러올 수 없습니다.</div>';
-        document.getElementById('watchlist').innerHTML = '<div class="empty-state">데이터를 불러올 수 없습니다.</div>';
-        return;
-      }
+    function App() {
+      const [currentSource, setCurrentSource] = useState('berkshire');
+      const [data, setData] = useState(null);
+      const [loading, setLoading] = useState(true);
+      const [error, setError] = useState(null);
+      const [quote, setQuote] = useState(casualQuotes[0]);
 
-      renderActionSummary(data);
-      renderMetaBar(data.metadata);
+      const showRandomQuote = useCallback(() => {
+        const randomQuote = casualQuotes[Math.floor(Math.random() * casualQuotes.length)];
+        setQuote(randomQuote);
+      }, []);
+
+      const loadData = useCallback(async (source) => {
+        try {
+          setLoading(true);
+          setError(null);
+          const response = await fetch(`/api/signals/${source}`);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const jsonData = await response.json();
+          setData(jsonData);
+        } catch (e) {
+          setError(e.message || '데이터를 불러오는 중 오류가 발생했습니다');
+        } finally {
+          setLoading(false);
+        }
+      }, []);
+
+      useEffect(() => {
+        loadData(currentSource);
+      }, [currentSource, loadData]);
+
+      useEffect(() => {
+        showRandomQuote();
+        const interval = setInterval(showRandomQuote, 10000);
+        return () => clearInterval(interval);
+      }, [showRandomQuote]);
+
+      const handleSourceChange = (source) => {
+        if (loading || currentSource === source) return;
+        setCurrentSource(source);
+      };
 
       const seen = new Set();
-      const uniqueExc = data.exclusionList.filter(i => !seen.has(i.symbol) && seen.add(i.symbol));
-      document.getElementById('exclusionList').innerHTML = uniqueExc.length ? uniqueExc.map(renderExclusionCard).join('') : '<div class="empty-state">리스크 신호 없음 👍</div>';
-      document.getElementById('exclusionCount').textContent = `${uniqueExc.length}개 종목`;
-
+      const uniqueExc = data?.exclusionList?.filter(i => !seen.has(i.symbol) && seen.add(i.symbol)) || [];
       seen.clear();
-      const uniqueWatch = data.watchlist.filter(i => !seen.has(i.symbol) && seen.add(i.symbol));
-      document.getElementById('watchlist').innerHTML = uniqueWatch.length ? uniqueWatch.map(renderWatchlistCard).join('') : '<div class="empty-state">긍정 신호 없음</div>';
-      document.getElementById('watchlistCount').textContent = `${uniqueWatch.length}개 종목`;
+      const uniqueWatch = data?.watchlist?.filter(i => !seen.has(i.symbol) && seen.add(i.symbol)) || [];
+
+      return (
+        <div className="container">
+          <header>
+            <div className="logo">🚀 To The Moon</div>
+            <h1>Signal Dashboard</h1>
+            <p className="subtitle">형님들 뭐 샀나 훔쳐보기</p>
+            <MetaBar metadata={data?.metadata} />
+            <p className="casual-quote">"{quote}"</p>
+          </header>
+
+          <div className="source-selector">
+            <button
+              className={`source-btn ${currentSource === 'berkshire' ? 'active' : ''} ${loading && currentSource === 'berkshire' ? 'loading' : ''}`}
+              onClick={() => handleSourceChange('berkshire')}
+              disabled={loading}
+            >
+              <span className="flag">🇺🇸</span>Berkshire Hathaway
+            </button>
+            <button
+              className={`source-btn ${currentSource === 'nps' ? 'active' : ''} ${loading && currentSource === 'nps' ? 'loading' : ''}`}
+              onClick={() => handleSourceChange('nps')}
+              disabled={loading}
+            >
+              <span className="flag">🇰🇷</span>국민연금
+            </button>
+          </div>
+
+          <ActionSummary data={data} />
+
+          <section className="section">
+            <div className="section-header">
+              <div className="section-icon danger">🚫</div>
+              <h2 className="section-title">Risk Signals</h2>
+              <span className="section-count">
+                {loading ? '-' : `${uniqueExc.length}개 종목`}
+              </span>
+            </div>
+            <div className="cards-grid">
+              {loading ? (
+                <LoadingSpinner />
+              ) : error ? (
+                <div className="empty-state">오류 발생</div>
+              ) : uniqueExc.length > 0 ? (
+                uniqueExc.map((item, idx) => <ExclusionCard key={idx} item={item} />)
+              ) : (
+                <div className="empty-state">리스크 신호 없음 👍</div>
+              )}
+            </div>
+          </section>
+
+          <section className="section">
+            <div className="section-header">
+              <div className="section-icon success">📈</div>
+              <h2 className="section-title">Positive Signals</h2>
+              <span className="section-count">
+                {loading ? '-' : `${uniqueWatch.length}개 종목`}
+              </span>
+            </div>
+            <div className="cards-grid">
+              {loading ? (
+                <LoadingSpinner />
+              ) : error ? (
+                <div className="empty-state">오류 발생</div>
+              ) : uniqueWatch.length > 0 ? (
+                uniqueWatch.map((item, idx) => <WatchlistCard key={idx} item={item} />)
+              ) : (
+                <div className="empty-state">긍정 신호 없음</div>
+              )}
+            </div>
+          </section>
+
+          <div className="disclaimer">
+            <div className="disclaimer-title">⚠️ 본 페이지는 참고용 페이지입니다.</div>
+            <div className="disclaimer-title">13F 공시 데이터는 최대 45일까지 지연될 수 있습니다.</div>
+          </div>
+        </div>
+      );
     }
 
-    render();
-    showRandomQuote();
-    setInterval(showRandomQuote, 10000);
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
   </script>
 </body>
 </html>
