@@ -1,26 +1,36 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.analyzeSource = analyzeSource;
 const sources_1 = require("../config/sources");
 const app_config_1 = require("../config/app.config");
 const sec_edgar_service_1 = require("./sec-edgar.service");
 const parser_service_1 = require("./parser.service");
+const app_error_1 = require("../errors/app.error");
+const logger_1 = __importDefault(require("../utils/logger"));
 async function analyzeSource(sourceKey) {
     const source = sources_1.SOURCES[sourceKey];
+    logger_1.default.info({ sourceKey, cik: source.cik }, `분석 시작: ${source.name}`);
     const filings = await (0, sec_edgar_service_1.get13FFilings)(source.cik);
     const numQuarters = app_config_1.APP_CONFIG.NUM_QUARTERS;
     const recentFilings = filings.slice(0, numQuarters);
     if (recentFilings.length === 0) {
-        throw new Error('분석할 13F 파일이 없습니다');
+        logger_1.default.error({ sourceKey, cik: source.cik }, '분석할 13F 파일이 없음');
+        throw new app_error_1.AppError(app_error_1.ErrorCode.NO_FILINGS_FOUND, '분석할 13F 파일이 없습니다', 404);
     }
+    logger_1.default.info({ sourceKey }, `${recentFilings.length}개 분기 데이터 수집 시작`);
     const quarterlyDataPromises = recentFilings.map(async (filing) => {
         const parsed = await (0, sec_edgar_service_1.download13F)(source.cik, filing.accessionNumber);
         const holdings = (0, parser_service_1.aggregateHoldings)(parsed);
         return { date: filing.filingDate, holdings };
     });
     const quarterlyData = await Promise.all(quarterlyDataPromises);
+    logger_1.default.info({ sourceKey, quarters: quarterlyData.length }, '분기 데이터 수집 완료');
     const allCusips = new Set();
     quarterlyData.forEach(q => Object.keys(q.holdings).forEach(k => allCusips.add(k)));
+    logger_1.default.debug({ sourceKey }, `총 ${allCusips.size}개 종목 발견`);
     const analysis = {};
     for (const cusip of allCusips) {
         const history = quarterlyData.map(q => ({
@@ -75,6 +85,11 @@ async function analyzeSource(sourceKey) {
             currentValue: history[0].value
         };
     }
+    logger_1.default.info({
+        sourceKey,
+        totalPositions: Object.keys(analysis).length,
+        quarters: quarterlyData.length
+    }, '분석 완료');
     return { quarterlyData, analysis, source };
 }
 //# sourceMappingURL=analyzer.service.js.map

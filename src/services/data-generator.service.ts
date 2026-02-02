@@ -1,5 +1,63 @@
 import { SOURCES } from '../config/sources';
-import { AnalysisResult, WebData, SourceKey, ExclusionItem, WatchlistItem } from '../types/interfaces';
+import { AnalysisResult, WebData, SourceKey, ExclusionItem, WatchlistItem, AnalysisItem, ChangeType } from '../types/interfaces';
+
+function formatChange(change: { from: string; to: string; percent: number; type: ChangeType }) {
+  return {
+    period: `${change.from} → ${change.to}`,
+    percent: parseFloat(change.percent.toFixed(2)),
+    type: change.type as ChangeType
+  };
+}
+
+function createExclusionItem(item: AnalysisItem, reason: 'CONSECUTIVE_DECREASE' | 'LIQUIDATED'): ExclusionItem {
+  const base = {
+    symbol: item.name,
+    cusip: item.cusip,
+    reason,
+    changes: item.changes.slice(0, 4).map(formatChange)
+  };
+
+  if (reason === 'CONSECUTIVE_DECREASE') {
+    return {
+      ...base,
+      detail: `${item.consecutiveDecreases}분기 연속 감축`,
+      severity: item.consecutiveDecreases >= 3 ? 'HIGH' : 'MEDIUM' as const,
+      currentShares: item.currentShares,
+      currentValueK: item.currentValue
+    };
+  }
+
+  return {
+    ...base,
+    detail: '완전 청산',
+    severity: 'HIGH' as const,
+    currentShares: 0,
+    previousValueK: item.history[1]?.value || 0
+  };
+}
+
+function createWatchlistItem(item: AnalysisItem, signal: 'NEW_POSITION' | 'CONSECUTIVE_INCREASE'): WatchlistItem {
+  const base = {
+    symbol: item.name,
+    cusip: item.cusip,
+    signal,
+    currentShares: item.currentShares,
+    currentValueK: item.currentValue
+  };
+
+  if (signal === 'NEW_POSITION') {
+    return {
+      ...base,
+      detail: '신규 편입'
+    };
+  }
+
+  return {
+    ...base,
+    detail: `${item.consecutiveIncreases}분기 연속 증가`,
+    changes: item.changes.slice(0, 4).map(formatChange)
+  };
+}
 
 export function generateWebData(analysisResult: AnalysisResult): WebData {
   const { analysis, quarterlyData, source } = analysisResult;
@@ -9,66 +67,21 @@ export function generateWebData(analysisResult: AnalysisResult): WebData {
   const exclusionList: ExclusionItem[] = [];
   
   items.filter(i => i.consecutiveDecreases >= 2).forEach(item => {
-    exclusionList.push({
-      symbol: item.name,
-      cusip: item.cusip,
-      reason: 'CONSECUTIVE_DECREASE',
-      detail: `${item.consecutiveDecreases}분기 연속 감축`,
-      severity: item.consecutiveDecreases >= 3 ? 'HIGH' : 'MEDIUM',
-      currentShares: item.currentShares,
-      currentValueK: item.currentValue,
-      changes: item.changes.slice(0, 4).map(c => ({
-        period: `${c.from} → ${c.to}`,
-        percent: parseFloat(c.percent.toFixed(2)),
-        type: c.type
-      }))
-    });
+    exclusionList.push(createExclusionItem(item, 'CONSECUTIVE_DECREASE'));
   });
-  
+
   items.filter(i => i.changes[0]?.type === 'LIQUIDATED').forEach(item => {
-    exclusionList.push({
-      symbol: item.name,
-      cusip: item.cusip,
-      reason: 'LIQUIDATED',
-      detail: '완전 청산',
-      severity: 'HIGH',
-      currentShares: 0,
-      previousValueK: item.history[1]?.value || 0,
-      changes: item.changes.slice(0, 4).map(c => ({
-        period: `${c.from} → ${c.to}`,
-        percent: parseFloat(c.percent.toFixed(2)),
-        type: c.type
-      }))
-    });
+    exclusionList.push(createExclusionItem(item, 'LIQUIDATED'));
   });
-  
+
   const watchlist: WatchlistItem[] = [];
-  
+
   items.filter(i => i.changes[0]?.type === 'NEW').forEach(item => {
-    watchlist.push({
-      symbol: item.name,
-      cusip: item.cusip,
-      signal: 'NEW_POSITION',
-      detail: '신규 편입',
-      currentShares: item.currentShares,
-      currentValueK: item.currentValue
-    });
+    watchlist.push(createWatchlistItem(item, 'NEW_POSITION'));
   });
-  
+
   items.filter(i => i.consecutiveIncreases >= 2 && i.currentShares > 0).forEach(item => {
-    watchlist.push({
-      symbol: item.name,
-      cusip: item.cusip,
-      signal: 'CONSECUTIVE_INCREASE',
-      detail: `${item.consecutiveIncreases}분기 연속 증가`,
-      currentShares: item.currentShares,
-      currentValueK: item.currentValue,
-      changes: item.changes.slice(0, 4).map(c => ({
-        period: `${c.from} → ${c.to}`,
-        percent: parseFloat(c.percent.toFixed(2)),
-        type: c.type
-      }))
-    });
+    watchlist.push(createWatchlistItem(item, 'CONSECUTIVE_INCREASE'));
   });
   
   const portfolio = items

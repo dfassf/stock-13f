@@ -3,17 +3,23 @@ import { APP_CONFIG } from '../config/app.config';
 import { get13FFilings, download13F } from './sec-edgar.service';
 import { aggregateHoldings } from './parser.service';
 import { SourceKey, AnalysisResult, ChangeType, AnalysisItem } from '../types/interfaces';
+import { AppError, ErrorCode } from '../errors/app.error';
+import logger from '../utils/logger';
 
 export async function analyzeSource(sourceKey: SourceKey): Promise<AnalysisResult> {
   const source = SOURCES[sourceKey];
+  logger.info({ sourceKey, cik: source.cik }, `분석 시작: ${source.name}`);
   
   const filings = await get13FFilings(source.cik);
   const numQuarters = APP_CONFIG.NUM_QUARTERS;
   const recentFilings = filings.slice(0, numQuarters);
   
   if (recentFilings.length === 0) {
-    throw new Error('분석할 13F 파일이 없습니다');
+    logger.error({ sourceKey, cik: source.cik }, '분석할 13F 파일이 없음');
+    throw new AppError(ErrorCode.NO_FILINGS_FOUND, '분석할 13F 파일이 없습니다', 404);
   }
+  
+  logger.info({ sourceKey }, `${recentFilings.length}개 분기 데이터 수집 시작`);
   
   const quarterlyDataPromises = recentFilings.map(async (filing) => {
     const parsed = await download13F(source.cik, filing.accessionNumber);
@@ -22,9 +28,11 @@ export async function analyzeSource(sourceKey: SourceKey): Promise<AnalysisResul
   });
   
   const quarterlyData = await Promise.all(quarterlyDataPromises);
+  logger.info({ sourceKey, quarters: quarterlyData.length }, '분기 데이터 수집 완료');
   
   const allCusips = new Set<string>();
   quarterlyData.forEach(q => Object.keys(q.holdings).forEach(k => allCusips.add(k)));
+  logger.debug({ sourceKey }, `총 ${allCusips.size}개 종목 발견`);
   
   const analysis: Record<string, AnalysisItem> = {};
   
@@ -77,6 +85,12 @@ export async function analyzeSource(sourceKey: SourceKey): Promise<AnalysisResul
       currentValue: history[0].value
     };
   }
+  
+  logger.info({ 
+    sourceKey, 
+    totalPositions: Object.keys(analysis).length,
+    quarters: quarterlyData.length 
+  }, '분석 완료');
   
   return { quarterlyData, analysis, source };
 }

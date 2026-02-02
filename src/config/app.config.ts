@@ -1,6 +1,8 @@
+import { ENV_CONFIG } from './env.config';
+
 export const APP_CONFIG = {
-  NUM_QUARTERS: parseInt(process.env.NUM_QUARTERS || '4'),
-  CACHE_MAX_AGE: parseInt(process.env.CACHE_MAX_AGE || '3600000'), // 1시간
-  API_TIMEOUT: parseInt(process.env.API_TIMEOUT || '30000'), // 30초
-  USER_AGENT: process.env.USER_AGENT || '13F-Signal-Tracker contact@example.com'
+  NUM_QUARTERS: ENV_CONFIG.NUM_QUARTERS,
+  CACHE_MAX_AGE: ENV_CONFIG.CACHE_MAX_AGE,
+  API_TIMEOUT: ENV_CONFIG.API_TIMEOUT,
+  USER_AGENT: ENV_CONFIG.USER_AGENT
 };
